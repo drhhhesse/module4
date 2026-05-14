@@ -1,4 +1,4 @@
-# LicitaSoluções - Módulo 4 - Diagramas UML
+# Módulo 4 - Diagramas UML
 
 > Engenharia de Software - Prof. Kurt - UNISC 2026/1  
 > Entrega 3 - Documento de Arquitetura + Diagramas UML  
@@ -11,9 +11,9 @@
 ```mermaid
 flowchart LR
     subgraph Atores
-        AL["🧑 Analista de Licitação"]
-        M1["⚙️ Módulo 1\n(Sistema Externo)"]
-        M2["⚙️ Módulo 2\n(Perfil Fornecedor)"]
+        AL[" Analista de Licitação"]
+        M1[" Módulo 1\n(Sistema Externo)"]
+        M2[" Módulo 2\n(Perfil Fornecedor)"]
     end
 
     subgraph Sistema["Módulo 4 - Análise Inteligente de Editais"]
@@ -417,7 +417,7 @@ flowchart LR
 
 ---
 
-*LicitaSoluções Módulo 4 - Diagramas UML v2.0 - UNISC 2026/1 - Henrique Hayes Hesse*
+*Módulo 4 - Diagramas UML v2.0 - UNISC 2026/1 - Henrique Hayes Hesse*
 
 ---
 
