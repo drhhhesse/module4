@@ -6,7 +6,7 @@ RAG Pipeline + Analysis Rules + Supabase/pgvector
 
 *Engenharia de Software --- Prof. Kurt \| UNISC 2026/1*
 
-*Henrique Hayes Hesse \| Scrum of Scrums + Arquitetura + LLM*
+*Henrique Hayes Hesse \| Arquitetura + LLM*
 
 **1. VISÃO GERAL**
 
