@@ -8,17 +8,16 @@
 
 A regra R6 (Go/No-Go) precisa verificar se o fornecedor oferece os itens solicitados no edital. O problema é que editais e catálogos de fornecedores usam descrições diferentes para o mesmo item:
 
-- Edital: "Lâmpada LED tubular T8 120cm 18W"
-- Fornecedor: "LED T8 1200mm tubo 20W"
-- Outro fornecedor: "Luminária LED tipo tubo 1,2m"
+- Edital: "Lâmpada LED"
+- Fornecedor: "LED E26"
+- Outro fornecedor: "Luminária LED tipo bulbo"
 
 Comparação textual exata falha. É necessário comparação semântica.
 
 ## Opções Consideradas
 
 1. **Dicionário de sinônimos** - manutenção manual, não escala
-2. **Códigos CATMAT/CATSER** - exato quando disponível, mas nem todos os editais incluem
-3. **Similaridade por embeddings** - semântica, automática, já disponível no pipeline
+2. **Similaridade por embeddings** - semântica, automática, já disponível no pipeline
 
 ## Decisão
 
