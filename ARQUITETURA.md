@@ -66,7 +66,7 @@ O Módulo 4 adota o padrão de **pipeline de regras em cascata** — cada regra 
 
 ### 3.1 Diagrama de Componentes
 
-> Ver: [Diagrama de Componentes com Interfaces](LicitaSolucoes_M4_Diagramas_UML.md#8-diagrama-de-componentes)
+> Ver: [Diagrama de Componentes com Interfaces](M4_Diagramas_UML.md#8-diagrama-de-componentes)
 
 Componentes internos:
 - **API Controller** (FastAPI) — expõe endpoints REST, orquestra serviços
@@ -92,7 +92,7 @@ Interfaces:
 
 ### 3.2 Diagrama de Implantação
 
-> Ver: [Diagrama de Implantação](LicitaSolucoes_M4_Diagramas_UML.md#diagrama-de-implantação)
+> Ver: [Diagrama de Implantação](M4_Diagramas_UML.md#diagrama-de-implantação)
 
 | Nó | Componente | Hospedagem |
 |----|-----------|-----------|
@@ -114,13 +114,13 @@ Interfaces:
 
 Todos os diagramas estão em Mermaid e renderizam nativamente no GitHub:
 
-- [Diagrama de Casos de Uso](LicitaSolucoes_M4_Diagramas_UML.md#1-diagrama-de-casos-de-uso)
-- [Diagrama de Classes](LicitaSolucoes_M4_Diagramas_UML.md#2-diagrama-de-classes)
-- [Diagrama de Sequência — Processamento Automático](LicitaSolucoes_M4_Diagramas_UML.md#3-diagrama-de-sequência--processamento-automático-trigger)
-- [Diagrama de Sequência — Chat RAG](LicitaSolucoes_M4_Diagramas_UML.md#4-diagrama-de-sequência--chat-rag)
-- [Diagrama de Sequência — Go/No-Go](LicitaSolucoes_M4_Diagramas_UML.md#5-diagrama-de-sequência--gono-go-r6)
-- [Diagrama ER](LicitaSolucoes_M4_Diagramas_UML.md#6-diagrama-er-entidade-relacionamento)
-- [Diagrama de Atividades](LicitaSolucoes_M4_Diagramas_UML.md#7-diagrama-de-atividades--pipeline-completo)
+- [Diagrama de Casos de Uso](M4_Diagramas_UML.md#1-diagrama-de-casos-de-uso)
+- [Diagrama de Classes](M4_Diagramas_UML.md#2-diagrama-de-classes)
+- [Diagrama de Sequência — Processamento Automático](M4_Diagramas_UML.md#3-diagrama-de-sequência--processamento-automático-trigger)
+- [Diagrama de Sequência — Chat RAG](M4_Diagramas_UML.md#4-diagrama-de-sequência--chat-rag)
+- [Diagrama de Sequência — Go/No-Go](M4_Diagramas_UML.md#5-diagrama-de-sequência--gono-go-r6)
+- [Diagrama ER](M4_Diagramas_UML.md#6-diagrama-er-entidade-relacionamento)
+- [Diagrama de Atividades](M4_Diagramas_UML.md#7-diagrama-de-atividades--pipeline-completo)
 
 ---
 
@@ -210,9 +210,9 @@ Todos os diagramas estão em Mermaid e renderizam nativamente no GitHub:
 
 ## Referências
 
-- [Diagramas UML completos](LicitaSolucoes_M4_Diagramas_UML.md)
+- [Diagramas UML completos](M4_Diagramas_UML.md)
 - [Pasta de ADRs](adr/)
-- [Arquitetura detalhada (docx)](LicitaSolucoes_Modulo4_Arquitetura_v2.docx)
+- [Arquitetura detalhada (docx)](Modulo4_Arquitetura_v2.md)
 
 ---
 
