@@ -216,4 +216,4 @@ Todos os diagramas estão em Mermaid e renderizam nativamente no GitHub:
 
 ---
 
-*LicitaSoluções Módulo 4 - Documento de Arquitetura v2.1 - UNISC 2026/1 - Henrique Hayes Hesse*
+*Módulo 4 - Documento de Arquitetura v2.1 - UNISC 2026/1 - Henrique Hayes Hesse*
