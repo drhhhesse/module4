@@ -1,4 +1,4 @@
-** Módulo 4**
+** Módulo 4 **
 
 Arquitetura do Módulo de Análise Inteligente de Editais
 
