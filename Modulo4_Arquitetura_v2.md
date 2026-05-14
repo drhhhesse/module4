@@ -97,6 +97,7 @@ O Modulo 4 utiliza ChromaDB como banco vetorial local para RAG e matching de cat
 **4.1 Tabela: editais**
 
 *Editais brutos recebidos do Módulo 1*
+``` sql
 
 CREATE TABLE editais (
 
@@ -121,10 +122,12 @@ created_at TIMESTAMPTZ DEFAULT now(),
 module1_metadata JSONB \-- Metadados do Módulo 1
 
 );
+```
 
 **4.2 Tabela: edital_analysis**
 
 *Resultados das regras de análise (R1-R4 + R6)*
+``` sql
 
 CREATE TABLE edital_analysis (
 
@@ -145,7 +148,7 @@ go_no_go JSONB, \-- R6: Recomendação
 processed_at TIMESTAMPTZ DEFAULT now()
 
 );
-
+```
 **4.3 Embeddings e Chunks (ChromaDB Local)**
 
 *Chunks embedados para RAG (R5) sao armazenados no ChromaDB localmente, nao no Supabase.*
@@ -266,99 +269,64 @@ Responda APENAS em JSON. Edital: {raw_text}
 
 \# 1. Inicializar clientes
 
-from supabase import create_client
-
-import requests \# Ollama API
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-OLLAMA_URL = \'http://localhost:11434\'
+    from supabase import create_client
+    import requests \# Ollama API
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    OLLAMA_URL = \'http://localhost:11434\'
 
 \# 2. Gerar embedding via Ollama
 
-def get_embedding(text: str) -\> list\[float\]:
-
-resp = requests.post(f\'{OLLAMA_URL}/api/embeddings\', json={
-
-\'model\': \'nomic-embed-text\',
-
-\'prompt\': text
-
-})
-
-return resp.json()\[\'embedding\'\]
+    def get_embedding(text: str) -\> list\[float\]:
+    resp = requests.post(f\'{OLLAMA_URL}/api/embeddings\', json={
+    \'model\': \'nomic-embed-text\',
+    \'prompt\': text
+    })
+    return resp.json()\[\'embedding\'\]
 
 \# 3. Gerar análise via Mistral
 
-def analyze_rule(rule_prompt: str, edital_text: str) -\> dict:
-
-resp = requests.post(f\'{OLLAMA_URL}/api/generate\', json={
-
-\'model\': \'mistral\',
-
-\'prompt\': rule_prompt.format(raw_text=edital_text),
-
-\'format\': \'json\',
-
-\'stream\': False
-
-})
+    def analyze_rule(rule_prompt: str, edital_text: str) -\> dict:
+    resp = requests.post(f\'{OLLAMA_URL}/api/generate\', json={
+    \'model\': \'mistral\',
+    \'prompt\': rule_prompt.format(raw_text=edital_text),
+    \'format\': \'json\',
+    \'stream\': False
+    })
 
 return json.loads(resp.json()\[\'response\'\])
 
 \# 4. Salvar no Supabase
 
-def save_analysis(edital_id: str, analysis: dict):
-
-supabase.table(\'edital_analysis\').insert({
-
-\'edital_id\': edital_id,
-
-\'legal_summary\': analysis\[\'legal_summary\'\],
-
-\'required_documents\': analysis\[\'required_documents\'\],
-
-\'price_range\': analysis\[\'price_range\'\],
-
-\'important_dates\': analysis\[\'important_dates\'\],
-
-}).execute()
+    def save_analysis(edital_id: str, analysis: dict):
+    supabase.table(\'edital_analysis\').insert({
+    \'edital_id\': edital_id,
+    \'legal_summary\': analysis\[\'legal_summary\'\],
+    \'required_documents\': analysis\[\'required_documents\'\],
+    \'price_range\': analysis\[\'price_range\'\],
+    \'important_dates\': analysis\[\'important_dates\'\],
+    }).execute()
 
 \# 5. Salvar chunks com embeddings no ChromaDB
 
-def save_chunks(edital_id: str, chunks: list\[str\]):
-
-for i, chunk in enumerate(chunks):
-
-embedding = get_embedding(chunk)
-
-chromadb_collection.add(
-
-documents=\[chunk\],
-
-embeddings=\[embedding\],
-
-ids=\[f\'{edital_id}_{i}\'\],
-
-metadatas=\[{\'edital_id\': edital_id, \'chunk_index\': i}\]
-
-)
+    def save_chunks(edital_id: str, chunks: list\[str\]):
+      for i, chunk in enumerate(chunks):
+        embedding = get_embedding(chunk)
+        chromadb_collection.add(
+        documents=\[chunk\],
+        embeddings=\[embedding\],
+        ids=\[f\'{edital_id}_{i}\'\],
+        metadatas=\[{\'edital_id\': edital_id, \'chunk_index\': i}\]
+        )
 
 \# 6. RAG similarity search via ChromaDB
 
-def search_chunks(question: str, edital_id: str):
-
-q_embedding = get_embedding(question)
-
-results = chromadb_collection.query(
-
-query_embeddings=\[q_embedding\],
-
-n_results=5,
-
-where={\'edital_id\': edital_id}
-
-)
+    def search_chunks(question: str, edital_id: str):
+    q_embedding = get_embedding(question)
+    results = chromadb_collection.query(
+    query_embeddings=\[q_embedding\],
+    n_results=5,
+    where={\'edital_id\': edital_id}
+    )
 
 return results
 
@@ -421,6 +389,7 @@ Com Supabase como data layer compartilhado, a integração é via SQL:
 **4.5 Tabela: supplier_catalogue**
 
 *Catálogo de produtos/serviços do fornecedor (preenchido pelo Módulo 2)*
+``` sql
 
 CREATE TABLE supplier_catalogue (
 
@@ -441,12 +410,14 @@ category TEXT, \-- Categoria (elétrica, etc.)
 created_at TIMESTAMPTZ DEFAULT now()
 
 );
+```
 
 O Módulo 2 é responsável por popular esta tabela. O Módulo 4 lê e indexa os itens no ChromaDB para matching por similaridade de embeddings.
 
 **4.6 Trigger: Processamento Automático**
 
 *Trigger PostgreSQL que dispara automaticamente quando o Módulo 1 insere um novo edital.*
+``` sql
 
 CREATE EXTENSION IF NOT EXISTS http;
 
@@ -479,6 +450,7 @@ AFTER INSERT ON editais
 FOR EACH ROW
 
 EXECUTE FUNCTION notify_module4();
+```
 
 Módulo 1 insere → trigger dispara → FastAPI /api/analyze é chamado automaticamente → R1-R5 executam sem intervenção humana.
 
@@ -488,80 +460,46 @@ Dentro da regra R6 (Go/No-Go), os itens do edital são comparados com o catálog
 
 \# 7. Indexar catálogo do fornecedor no ChromaDB
 
-def index_catalogue_item(item: dict):
-
-embedding = get_embedding(item\[\'item_description\'\])
-
-chromadb_catalogue.add(
-
-documents=\[item\[\'item_description\'\]\],
-
-embeddings=\[embedding\],
-
-ids=\[str(item\[\'id\'\])\],
-
-metadatas=\[{
-
-\'supplier_id\': str(item\[\'supplier_id\'\]),
-
-\'unit_price\': item\[\'unit_price\'\],
-
-\'unit\': item\[\'unit\'\]
-
-}\]
-
-)
+    def index_catalogue_item(item: dict):
+    embedding = get_embedding(item\[\'item_description\'\])
+    chromadb_catalogue.add(
+    documents=\[item\[\'item_description\'\]\],
+    embeddings=\[embedding\],
+    ids=\[str(item\[\'id\'\])\],
+    metadatas=\[{
+    \'supplier_id\': str(item\[\'supplier_id\'\]),
+    \'unit_price\': item\[\'unit_price\'\],
+    \'unit\': item\[\'unit\'\]
+    }\]
+    )
 
 \# 8. Matching: item do edital vs catálogo do fornecedor
 
-def match_items(edital_items: list, supplier_id: str):
+    def match_items(edital_items: list, supplier_id: str):
+      results = \[\]
+      for item in edital_items:
+        item_embedding = get_embedding(item\[\'description\'\])
+        matches = chromadb_catalogue.query(
+        query_embeddings=\[item_embedding\],
+        n_results=3,
+        where={\'supplier_id\': supplier_id}
+        )
+        best_score = matches\[\'distances\'\]\[0\]\[0\] if matches\[\'ids\'\]\[0\] else 0
+        similarity = 1 - best_score \# cosine distance to similarity
+        if similarity \> 0.85:
+          status = \'MATCH\'
+        elif similarity \> 0.60:
+          status = \'REVISÃO\'
+        else:
+          status = \'SEM MATCH\'
+          results.append({
+          \'edital_item\': item\[\'description\'\],
+          \'best_match\': matches\[\'documents\'\]\[0\]\[0\] if matches\[\'ids\'\]\[0\] else None,
+          \'similarity\': round(similarity, 3),
+          \'status\': status
+           })
+    return results
 
-results = \[\]
-
-for item in edital_items:
-
-item_embedding = get_embedding(item\[\'description\'\])
-
-matches = chromadb_catalogue.query(
-
-query_embeddings=\[item_embedding\],
-
-n_results=3,
-
-where={\'supplier_id\': supplier_id}
-
-)
-
-best_score = matches\[\'distances\'\]\[0\]\[0\] if matches\[\'ids\'\]\[0\] else 0
-
-similarity = 1 - best_score \# cosine distance to similarity
-
-if similarity \> 0.85:
-
-status = \'MATCH\'
-
-elif similarity \> 0.60:
-
-status = \'REVISÃO\'
-
-else:
-
-status = \'SEM MATCH\'
-
-results.append({
-
-\'edital_item\': item\[\'description\'\],
-
-\'best_match\': matches\[\'documents\'\]\[0\]\[0\] if matches\[\'ids\'\]\[0\] else None,
-
-\'similarity\': round(similarity, 3),
-
-\'status\': status
-
-})
-
-return results
-
-Score \> 0.85 = match automático  \| 0.60--0.85 = revisão humana  \| \< 0.60 = sem match 
+    Score \> 0.85 = match automático  \| 0.60--0.85 = revisão humana  \| \< 0.60 = sem match 
 
 *Módulo 4 --- Arquitetura v2.1 --- Henrique Hayes Hesse --- UNISC 2026*
