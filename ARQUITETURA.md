@@ -1,6 +1,6 @@
 # Documento de Arquitetura - Módulo 4: Análise Inteligente de Editais
 
-> **Projeto:** LicitaSoluções  
+> **Projeto:** Licitação  
 > **Módulo:** 4 - Análise Inteligente de Editais  
 > **Disciplina:** Engenharia de Software - Prof. Kurt - UNISC 2026/1  
 > **Autor:** Henrique Hayes Hesse | Scrum of Scrums + Arquitetura + LLM  
