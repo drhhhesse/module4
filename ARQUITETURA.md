@@ -212,7 +212,7 @@ Todos os diagramas estão em Mermaid e renderizam nativamente no GitHub:
 
 - [Diagramas UML completos](M4_Diagramas_UML.md)
 - [Pasta de ADRs](adr/)
-- [Arquitetura detalhada (docx)](Modulo4_Arquitetura_v2.md)
+- [Arquitetura detalhada ](Modulo4_Arquitetura_v2.md)
 
 ---
 
