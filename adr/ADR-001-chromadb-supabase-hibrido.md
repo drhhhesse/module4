@@ -8,7 +8,7 @@
 
 O Módulo 4 utilizava originalmente o ChromaDB como banco de vetores local para RAG (Retrieval-Augmented Generation). O ChromaDB roda como SQLite + índice HNSW localmente, sem suporte a SQL e sem acesso compartilhado entre módulos.
 
-O LicitaSoluções possui 4+ módulos que precisam compartilhar dados - o Módulo 1 grava editais, o Módulo 2 grava perfis de fornecedores, o Módulo 4 lê ambos para análise e recomendação Go/No-Go. O ChromaDB não pode servir como camada de dados compartilhada.
+Agora possui 4+ módulos que precisam compartilhar dados - o Módulo 1 grava editais, o Módulo 2 grava perfis de fornecedores, o Módulo 4 lê ambos para análise e recomendação Go/No-Go. O ChromaDB não pode servir como camada de dados compartilhada.
 
 Porém, o ChromaDB funciona bem para sua finalidade original: busca vetorial rápida e local para o chat RAG.
 
