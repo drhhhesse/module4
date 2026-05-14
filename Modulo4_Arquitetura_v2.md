@@ -1,8 +1,8 @@
-**Módulo 4**
+** Módulo 4**
 
 Arquitetura do Módulo de Análise Inteligente de Editais
 
-RAG Pipeline + Analysis Rules + Supabase/pgvector
+RAG Pipeline + Analysis Rules + ChromaDB + Supabase
 
 *Engenharia de Software --- Prof. Kurt \| UNISC 2026/1*
 
@@ -10,7 +10,7 @@ RAG Pipeline + Analysis Rules + Supabase/pgvector
 
 **1. VISÃO GERAL**
 
-Módulo 4 é o componente de análise inteligente de editais. Recebe documentos PDF de licitações públicas (editais) do Módulo 1, processa com LLM local (Mistral/Ollama), e produz:
+Módulo 4 é o componente de análise inteligente de editais da plataforma. Recebe documentos PDF de licitações públicas (editais) do Módulo 1, processa com LLM local (Mistral/Ollama), e produz:
 
 -   Resumo jurídico --- exigências legais, cláusulas de conformidade, certificações obrigatórias
 
@@ -41,7 +41,7 @@ O pipeline segue o padrão de cascata de regras (inspirado no ConeRod gate archi
 
   **R4**   **Datas Importantes**        Prazo de entrega de propostas, data de abertura, período de esclarecimentos, prazo de recursos, visita técnica                       important_dates: jsonb
 
-  **R5**   **Embedding + RAG Index**    Chunking (3200 chars, 800 overlap) + embedding via nomic-embed-text + armazenamento em Supabase pgvector                             embedding: vector(768)
+  **R5**   **Embedding + RAG Index**    Chunking (3200 chars, 800 overlap) + embedding via nomic-embed-text + armazenamento em ChromaDB local                             embedding: vector(768)
 
   **R6**   **Go/No-Go**                 Cruzamento com perfil do fornecedor (Módulo 2): documentos faltantes, preço abaixo do piso, região de entrega, incompatibilidades    recommendation: jsonb
   -------- ---------------------------- ------------------------------------------------------------------------------------------------------------------------------------ ------------------------
@@ -60,35 +60,17 @@ O pipeline segue o padrão de cascata de regras (inspirado no ConeRod gate archi
 
 4.  Resultados estruturados escritos no Supabase Postgres (tabela edital_analysis)
 
-5.  Texto dividido em chunks, embeddings gerados via nomic-embed-text, armazenados em pgvector
+5.  Texto dividido em chunks, embeddings gerados via nomic-embed-text, armazenados em ChromaDB local
 
-6.  Usuário faz perguntas via chat → embedding da pergunta → pgvector busca top 5 chunks → Mistral gera resposta
+6.  Usuário faz perguntas via chat → embedding da pergunta → ChromaDB busca top 5 chunks → Mistral gera resposta
 
 7.  Go/No-Go cruza R1-R4 com perfil do fornecedor (Módulo 2) e produz recomendação
 
 **3. STACK TECNOLÓGICO**
 
-**3.1 Migração: ChromaDB → Supabase + pgvector**
+**3.1 Abordagem Hibrida: ChromaDB (local) + Supabase (dados compartilhados)**
 
-A versão anterior usava ChromaDB (SQLite + HNSW local). A nova arquitetura migra para Supabase + pgvector, criando um data layer compartilhado entre todos os 4+ módulos.
-
-  ---------------------- ---------------------------- ---------------------------------------------
-  **Aspecto**            **ChromaDB (anterior)**      **Supabase + pgvector (novo)**
-
-  **Banco de dados**     SQLite local + HNSW index    PostgreSQL na nuvem (ou self-hosted)
-
-  **Busca vetorial**     ChromaDB API própria         pgvector extension (operador \<=\>)
-
-  **SQL queries**        Não suportado                SQL completo + vector search na mesma query
-
-  **Compartilhamento**   Apenas Módulo 4              Todos os módulos acessam o mesmo banco
-
-  **Auth / RLS**         Nenhum                       Row Level Security nativo
-
-  **API REST**           Requer FastAPI custom        PostgREST auto-gerado pelo Supabase
-
-  **Escala**             Milhões de vetores (local)   Milhões de vetores (cloud, replicado)
-  ---------------------- ---------------------------- ---------------------------------------------
+O Modulo 4 utiliza ChromaDB como banco vetorial local para RAG e matching de catalogo. A busca vetorial roda localmente (SQLite + HNSW) com latencia minima e sem dependencia de rede. O Supabase serve como camada de dados compartilhada entre todos os modulos para dados estruturados (editais, analises, perfis de fornecedores).
 
 **3.2 Componentes**
 
@@ -103,9 +85,9 @@ A versão anterior usava ChromaDB (SQLite + HNSW local). A nova arquitetura migr
 
   **Embeddings**       nomic-embed-text (Ollama)   Conversão texto → vetor 768d para busca semântica
 
-  **Banco de dados**   Supabase (PostgreSQL)       Armazenamento de editais, análises, embeddings, perfis
+  **Banco de dados**   Supabase (PostgreSQL)       Armazenamento de editais, analises, perfis de fornecedores
 
-  **Busca vetorial**   pgvector extension          Similarity search via operador \<=\> (cosine distance)
+  **Busca vetorial**   ChromaDB (local)            Similarity search via cosine distance (SQLite + HNSW)
 
   **Frontend**         Vue.js (SPA)                Interface de chat, upload, visualização de análises
   -------------------- --------------------------- ----------------------------------------------------------
@@ -164,81 +146,19 @@ processed_at TIMESTAMPTZ DEFAULT now()
 
 );
 
-**4.3 Tabela: edital_chunks**
+**4.3 Embeddings e Chunks (ChromaDB Local)**
 
-*Chunks embedados para RAG (R5)*
+*Chunks embedados para RAG (R5) sao armazenados no ChromaDB localmente, nao no Supabase.*
 
-CREATE EXTENSION IF NOT EXISTS vector;
+ChromaDB utiliza SQLite + indice HNSW para busca vetorial rapida. Os chunks sao indexados por edital_id e podem ser re-gerados a qualquer momento re-executando R5.
 
-CREATE TABLE edital_chunks (
+Busca de similaridade via ChromaDB Python API:
 
-id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-
-edital_id UUID REFERENCES editais(id) ON DELETE CASCADE,
-
-chunk_index INT NOT NULL, \-- Posição do chunk no documento
-
-content TEXT NOT NULL, \-- Texto do chunk (3200 chars)
-
-embedding VECTOR(768), \-- nomic-embed-text output
-
-created_at TIMESTAMPTZ DEFAULT now()
-
-);
-
-\-- Índice para busca vetorial rápida
-
-CREATE INDEX ON edital_chunks
-
-USING ivfflat (embedding vector_cosine_ops)
-
-WITH (lists = 100);
-
-**4.4 Função RPC: Similarity Search**
-
-CREATE OR REPLACE FUNCTION match_chunks(
-
-query_embedding VECTOR(768),
-
-match_count INT DEFAULT 5,
-
-filter_edital_id UUID DEFAULT NULL
-
-)
-
-RETURNS TABLE (
-
-id UUID,
-
-edital_id UUID,
-
-content TEXT,
-
-similarity FLOAT
-
-) AS \$\$
-
-BEGIN
-
-RETURN QUERY
-
-SELECT
-
-ec.id, ec.edital_id, ec.content,
-
-1 - (ec.embedding \<=\> query_embedding) AS similarity
-
-FROM edital_chunks ec
-
-WHERE (filter_edital_id IS NULL OR ec.edital_id = filter_edital_id)
-
-ORDER BY ec.embedding \<=\> query_embedding
-
-LIMIT match_count;
-
-END;
-
-\$\$ LANGUAGE plpgsql;
+    results = chromadb_collection.query(
+        query_embeddings=[query_vector],
+        n_results=5,
+        where={"edital_id": edital_id}
+    )
 
 **5. API ENDPOINTS (FASTAPI)**
 
@@ -247,7 +167,7 @@ END;
 
   **POST**     /api/upload                 Upload de PDF. Extrai texto via pdfplumber. Salva em editais.
 
-  **POST**     /api/analyze/{edital_id}    Executa R1-R5 sequencialmente. Salva resultados em edital_analysis + edital_chunks.
+  **POST**     /api/analyze/{edital_id}    Executa R1-R5 sequencialmente. Salva resultados em edital_analysis (Supabase) + ChromaDB (chunks).
 
   **GET**      /api/analysis/{edital_id}   Retorna análise completa: resumo jurídico, documentos, preços, datas.
 
@@ -404,7 +324,7 @@ supabase.table(\'edital_analysis\').insert({
 
 }).execute()
 
-\# 5. Salvar chunks com embeddings
+\# 5. Salvar chunks com embeddings no ChromaDB
 
 def save_chunks(edital_id: str, chunks: list\[str\]):
 
@@ -412,35 +332,35 @@ for i, chunk in enumerate(chunks):
 
 embedding = get_embedding(chunk)
 
-supabase.table(\'edital_chunks\').insert({
+chromadb_collection.add(
 
-\'edital_id\': edital_id,
+documents=\[chunk\],
 
-\'chunk_index\': i,
+embeddings=\[embedding\],
 
-\'content\': chunk,
+ids=\[f\'{edital_id}_{i}\'\],
 
-\'embedding\': embedding,
+metadatas=\[{\'edital_id\': edital_id, \'chunk_index\': i}\]
 
-}).execute()
+)
 
-\# 6. RAG similarity search
+\# 6. RAG similarity search via ChromaDB
 
 def search_chunks(question: str, edital_id: str):
 
 q_embedding = get_embedding(question)
 
-result = supabase.rpc(\'match_chunks\', {
+results = chromadb_collection.query(
 
-\'query_embedding\': q_embedding,
+query_embeddings=\[q_embedding\],
 
-\'match_count\': 5,
+n_results=5,
 
-\'filter_edital_id\': edital_id
+where={\'edital_id\': edital_id}
 
-}).execute()
+)
 
-return result.data
+return results
 
 **8. HARDWARE E DEPLOY**
 
@@ -453,7 +373,7 @@ return result.data
 
   **Modelo de embeddings**   nomic-embed-text via Ollama
 
-  **Banco de dados**         Supabase Cloud (PostgreSQL + pgvector) ou self-hosted
+  **Banco de dados**         Supabase Cloud (PostgreSQL) ou self-hosted
 
   **Backend**                FastAPI no mesmo servidor, porta 8400
 
@@ -475,7 +395,7 @@ Com Supabase como data layer compartilhado, a integração é via SQL:
 
   **M3 (?)**         TBD                                      TBD
 
-  **M4 (Análise)**   edital_analysis, edital_chunks           editais (M1), suppliers (M2) para Go/No-Go
+  **M4 (Análise)**   edital_analysis (Supabase), chunks (ChromaDB local)           editais (M1), suppliers (M2) para Go/No-Go
   ------------------ ---------------------------------------- --------------------------------------------
 
 *Nenhum módulo precisa chamar API de outro módulo. Todos leem e escrevem no mesmo Postgres. A integração é por dados, não por API.*
@@ -488,7 +408,7 @@ Com Supabase como data layer compartilhado, a integração é via SQL:
 
 10. Implementar regras R1-R4 como funções Python com prompts estruturados
 
-11. Implementar chunking + embedding + armazenamento pgvector
+11. Implementar chunking + embedding + armazenamento ChromaDB
 
 12. Implementar endpoint /api/chat (RAG)
 
@@ -644,4 +564,4 @@ return results
 
 Score \> 0.85 = match automático  \| 0.60--0.85 = revisão humana  \| \< 0.60 = sem match 
 
-*LicitaSoluções Módulo 4 --- Arquitetura v2.1 --- Henrique Hayes Hesse --- UNISC 2026*
+*Módulo 4 --- Arquitetura v2.1 --- Henrique Hayes Hesse --- UNISC 2026*
