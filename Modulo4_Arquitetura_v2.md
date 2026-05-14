@@ -1,4 +1,4 @@
-**LicitaSoluções --- Módulo 4**
+**Módulo 4**
 
 Arquitetura do Módulo de Análise Inteligente de Editais
 
@@ -10,7 +10,7 @@ RAG Pipeline + Analysis Rules + Supabase/pgvector
 
 **1. VISÃO GERAL**
 
-Módulo 4 é o componente de análise inteligente de editais da plataforma LicitaSoluções. Recebe documentos PDF de licitações públicas (editais) do Módulo 1, processa com LLM local (Mistral/Ollama), e produz:
+Módulo 4 é o componente de análise inteligente de editais. Recebe documentos PDF de licitações públicas (editais) do Módulo 1, processa com LLM local (Mistral/Ollama), e produz:
 
 -   Resumo jurídico --- exigências legais, cláusulas de conformidade, certificações obrigatórias
 
