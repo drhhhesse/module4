@@ -15,7 +15,7 @@ pytest                          # todos os testes
 pytest -m unit                  # apenas unidade
 pytest -m integration           # apenas integração
 pytest -m negative              # apenas casos negativos
-pytest --cov=src --cov-report=term-missing   # com cobertura (critério: ≥ 70%)
+pytest --cov=src --cov-report=term-missing   # com cobertura (critério: ≥ 80%)
 ```
 
 ## Estrutura
